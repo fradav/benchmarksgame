@@ -1,0 +1,47 @@
+﻿type F = F of bigint * bigint * bigint * bigint
+
+
+let flr x (F (q,r,s,t)) = (q*x + r) / (s*x + t)
+let comp (F (q,r,s,t)) (F (u,v,w,x)) = F (q*u + r*w, q*v + r*x, s*u + t*w, s*v + t*x) 
+
+let mutable zacc = F(1I,0I,0I,1I)
+
+let str n =
+    let mutable k = 1I
+    let out = System.Console.OpenStandardOutput()
+    let bytes = Array.zeroCreate 12
+    bytes.[10] <- '\t'B; bytes.[11] <- ':'B
+    let mutable i = 0
+    while true do
+        let x = F (k, 4I * k + 2I, 0I, 2I*k + 1I)
+        k <- k + 1I
+        let mutable y = flr 3I zacc
+        while y = flr 4I zacc do
+            bytes.[i%10] <-  byte(48I+y)
+            i <- i + 1
+            if i%10=0 then
+                out.Write(bytes,0,12)
+                System.Console.WriteLine i
+            if i=n then
+                if i%10<>0 then
+                    for c = i%10 to 9 do
+                        bytes.[c] <- ' 'B
+                    out.Write(bytes,0,12)
+                    System.Console.WriteLine n
+                exit 0
+            else
+                zacc <- comp (F(10I,(-10I*y),0I,1I)) zacc
+                y <- flr 3I zacc
+        zacc <- comp zacc x    
+  
+let rec loop = function
+    | n, s, l when Seq.isEmpty l  -> printfn "%s\t:%A" (String.replicate n " ") s
+    | 0, s, xs    -> printfn "\t:%A" s;loop (10,s,xs)
+    | n, s, l -> printf "%A" (Seq.head l);loop ((n-1),(s+1I),(Seq.tail l))
+
+[<EntryPoint>]
+let main args =
+    let n = try int args.[0] with _ -> 27
+    str n
+    // |> (fun x -> loop (10,0I,x))
+    0

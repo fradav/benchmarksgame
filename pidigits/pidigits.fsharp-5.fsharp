@@ -1,0 +1,60 @@
+﻿type LazyList<'a> = 
+   | Empty 
+   | Cons of 'a * Lazy<LazyList<'a>> 
+   with
+   member l.Head = 
+      match l with
+      | Cons (h, _) -> h 
+      | Empty -> failwith "empty list"
+   member l.Tail = 
+      match l with
+      | Cons (_, t) -> t.Force() 
+      | Empty -> failwith "empty list"
+
+let rec unfold (f : 's -> ('a*'s) option) (init : 's) : LazyList<'a> = 
+      match f init with
+      | None -> Empty 
+      | Some (a, s) -> Cons (a, lazy ( unfold f s))
+
+let rec take nr (l : LazyList<'a>) : LazyList<'a> = 
+      match l with
+      | Empty -> Empty 
+      | Cons (a, t) -> 
+         if nr = 0 then Empty 
+         else Cons (a, lazy (take (nr-1) (t.Force())))
+
+let rec foldr (f : 'a -> Lazy<'s> -> 's) (init : 's) (l : LazyList<'a>) : 's = 
+   match l with
+   | Empty -> init 
+   | Cons (a, t) -> f a (lazy (foldr f init (t.Force())))
+
+type F = F of bigint * bigint * bigint * bigint
+
+let natNumbers = unfold (fun n -> Some (n, n+1I)) 1I
+
+let ns =
+    foldr (fun k l -> Cons (F(k, 4I * k + 2I, 0I, 2I*k + 1I),l)) Empty natNumbers
+
+let rec loop = function
+    | n, s, Empty    -> printfn "%s\t:%A" (String.replicate n " ") s
+    | 0, s, xs    -> printfn "\t:%A" s;loop (10,s,xs)
+    | n, s, Cons (x,xs) -> printf "%A" x;loop ((n-1),(s+1I),xs.Force())
+
+let flr x (F (q,r,s,t)) = (q*x + r) / (s*x + t)
+let comp (F (q,r,s,t)) (F (u,v,w,x)) = F (q*u + r*w, q*v + r*x, s*u + t*w, s*v + t*x) 
+
+let rec str z l = 
+    let y = flr 3I z
+    match z,l with
+    | z, l when y = flr 4I z -> Cons(y,lazy(str (comp (F (10I,-10I*y,0I,1I)) z) l))
+    | z, Cons(x,xs)          -> str (comp z x) (xs.Force())
+    | z, Empty -> str z l 
+
+[<EntryPoint>]
+let main args =
+    let n = try int args.[0] with _ -> 27
+    ns
+    |> str (F(1I,0I,0I,1I))
+    |> take n
+    |> (fun x -> loop (10,0I,x))
+    0

@@ -1,0 +1,28 @@
+﻿type F = F of bigint * bigint * bigint * bigint
+
+let ns =
+    Seq.initInfinite (fun K -> let k = bigint(K)
+                               F (k, 4I * k + 2I, 0I, 2I*k + 1I) ) |> Seq.tail
+
+let rec loop = function
+    | n, s, l when Seq.isEmpty l  -> printfn "%s\t:%A" (String.replicate n " ") s
+    | 0, s, xs    -> printfn "\t:%A" s;loop (10,s,xs)
+    | n, s, l -> printf "%A" (Seq.head l);loop ((n-1),(s+1I),(Seq.tail l))
+
+let flr x (F (q,r,s,t)) = (q*x + r) / (s*x + t)
+let comp (F (q,r,s,t)) (F (u,v,w,x)) = F (q*u + r*w, q*v + r*x, s*u + t*w, s*v + t*x) 
+
+let rec str z l = 
+    let y = flr 3I z
+    match z,l with
+    | z, l when y = flr 4I z -> seq { yield y; yield! str (comp (F (10I,-10I*y,0I,1I)) z) l }
+    | z, l                   -> str (comp z (Seq.head l)) (Seq.tail l)
+
+[<EntryPoint>]
+let main args =
+    let n = try int args.[0] with _ -> 27
+    ns
+    |> str (F(1I,0I,0I,1I))
+    |> Seq.take n
+    |> (fun x -> loop (10,0I,x))
+    0
