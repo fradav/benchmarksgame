@@ -1,4 +1,14 @@
-﻿open System.Runtime.InteropServices
+﻿(**
+ * The Computer Language Benchmarks Game
+ * https://salsa.debian.org/benchmarksgame-team/benchmarksgame/
+ *
+ * Port to F# by Jomo Fisher of the C# port that uses native GMP:
+ * 	contributed by Mike Pall
+ * 	java port by Stefan Krause
+ *  C# port by Miguel de Icaza
+ * F#-Idiomatization by François-David Collin
+*)
+open System.Runtime.InteropServices
 
 [<Struct; StructLayout(LayoutKind.Sequential)>]
 type MPZ =
@@ -84,14 +94,14 @@ let rec str k =
                                   yield! str (k+1)
     }
 
-let loop n s l = 
+let loop on s l = 
     let (n,s) =
         Seq.fold (fun (n,s) x -> let (n,s) =
                                     match n with
-                                    | 0 -> printfn "\t:%d" s;(9,s+1)
+                                    | 0 -> printfn "\t:%d" s;(on-1,s+1)
                                     | _ -> (n-1,s+1)
                                  printf "%d" x
-                                 (n,s)) (n,s) l
+                                 (n,s)) (on,s) l
     printfn "%s\t:%d" (String.replicate n " ") s
     
 [<EntryPoint>]
